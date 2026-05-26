@@ -35,12 +35,21 @@ class _MemberPostCallSheetState extends ConsumerState<MemberPostCallSheet> {
     );
   }
 
+  String get _ratingLabel => switch (_rating) {
+        1 => 'Needs work',
+        2 => 'Okay',
+        3 => 'Good',
+        4 => 'Great',
+        _ => 'Amazing!',
+      };
+
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.lg,
-        AppSpacing.lg,
+        AppSpacing.sm,
         AppSpacing.lg,
         AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
       ),
@@ -48,15 +57,61 @@ class _MemberPostCallSheetState extends ConsumerState<MemberPostCallSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('How was the session?', style: Theme.of(context).textTheme.titleMedium),
+          Center(
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    primary.withValues(alpha: 0.18),
+                    primary.withValues(alpha: 0.04),
+                  ],
+                ),
+              ),
+              child: Icon(Icons.celebration_rounded, color: primary, size: 26),
+            ),
+          ),
           const SizedBox(height: AppSpacing.md),
+          Center(
+            child: Text(
+              'How was the session?',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Center(
+            child: Text(
+              'Your rating helps Aarav improve every call.',
+              style: TextStyle(color: AppColors.subtle, fontSize: 13),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
           Center(
             child: StarRating(
               value: _rating,
               onChanged: (v) => setState(() => _rating = v),
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: 6),
+          Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: Text(
+                _ratingLabel,
+                key: ValueKey(_rating),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
           TextField(
             controller: _notes,
             maxLines: 3,
@@ -66,7 +121,12 @@ class _MemberPostCallSheetState extends ConsumerState<MemberPostCallSheet> {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          PrimaryButton(label: 'Save & close', loading: _busy, onPressed: _submit),
+          PrimaryButton(
+            label: 'Save & close',
+            icon: Icons.check_rounded,
+            loading: _busy,
+            onPressed: _submit,
+          ),
         ],
       ),
     );

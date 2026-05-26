@@ -45,8 +45,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (!_scroll.hasClients) return;
       _scroll.animateTo(
         _scroll.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
       );
     });
   }
@@ -59,36 +59,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final vm = ref.read(chatViewModelProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.go('/home'),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: AppColors.trainerPrimary.withValues(alpha: 0.15),
-              child: const Text('A', style: TextStyle(color: AppColors.trainerPrimary, fontWeight: FontWeight.w600)),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(pair.peerName,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.ink)),
-                const Text('Trainer • Online',
-                    style: TextStyle(fontSize: 11, color: AppColors.success)),
-              ],
-            ),
-          ],
-        ),
-        actions: const [
-          _CallToolbarButton(),
-          SizedBox(width: 4),
-        ],
+      backgroundColor: AppColors.bgSoft,
+      appBar: _ChatAppBar(
+        peerName: pair.peerName,
+        peerInitial: pair.peerName.isNotEmpty
+            ? pair.peerName.characters.first.toUpperCase()
+            : 'T',
+        subtitleColor: AppColors.success,
+        subtitle: 'Trainer • Online',
+        onBack: () => context.go('/home'),
       ),
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
             Expanded(
@@ -100,8 +82,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   if (list.isEmpty) {
                     return EmptyState(
                       icon: Icons.chat_bubble_outline_rounded,
-                      title: 'No messages yet. Start the conversation.',
-                      subtitle: 'Say hi to ${pair.peerName} or pick a quick reply below.',
+                      title: 'No messages yet',
+                      subtitle:
+                          'Say hi to ${pair.peerName} or pick a quick reply below to get going.',
                       action: PrimaryButton(
                         label: 'Say hi',
                         icon: Icons.waving_hand_rounded,
@@ -140,6 +123,117 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
+class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _ChatAppBar({
+    required this.peerName,
+    required this.peerInitial,
+    required this.subtitle,
+    required this.subtitleColor,
+    required this.onBack,
+  });
+
+  final String peerName;
+  final String peerInitial;
+  final String subtitle;
+  final Color subtitleColor;
+  final VoidCallback onBack;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(64);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      toolbarHeight: 64,
+      titleSpacing: 0,
+      leadingWidth: 44,
+      leading: IconButton(
+        onPressed: onBack,
+        icon: const Icon(Icons.arrow_back_rounded),
+      ),
+      title: Row(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.trainerPrimary,
+                      AppColors.trainerPrimary.withValues(alpha: 0.78),
+                    ],
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  peerInitial,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: AppColors.success,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  peerName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                    letterSpacing: -0.2,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: subtitleColor,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: const [
+        _CallToolbarButton(),
+        SizedBox(width: 4),
+      ],
+    );
+  }
+}
+
 class _CallToolbarButton extends ConsumerWidget {
   const _CallToolbarButton();
 
@@ -147,26 +241,38 @@ class _CallToolbarButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final next = ref.watch(_upcomingCallProvider).valueOrNull;
     if (next == null) return const SizedBox.shrink();
+    final primary = Theme.of(context).colorScheme.primary;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: IconButton(
-        tooltip: 'Join upcoming call',
-        icon: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            const Icon(Icons.videocam_outlined),
-            Positioned(
-              right: -4,
-              top: -2,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
-              ),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      child: Material(
+        color: primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          onTap: () => context.go('/home/prejoin/${next.id}'),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(Icons.videocam_rounded, color: primary, size: 22),
+                Positioned(
+                  right: -4,
+                  top: -3,
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-        onPressed: () => context.go('/home/prejoin/${next.id}'),
       ),
     );
   }

@@ -19,7 +19,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   bool _busy = false;
 
   static const _trainerOptions = [
-    ('trainer_aarav', 'Aarav (Lead Trainer)'),
+    ('trainer_aarav', 'Aarav', 'Lead Trainer • 8 yrs'),
   ];
 
   @override
@@ -57,55 +57,196 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bgSoft,
       appBar: AppBar(title: const Text("Let's get to know you")),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _name,
-                decoration: const InputDecoration(labelText: 'Your name'),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: _email,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              const Text(
-                'Pick your trainer',
-                style: TextStyle(fontSize: 14, color: AppColors.subtle),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              ..._trainerOptions.map(
-                (t) => InkWell(
-                  onTap: () => setState(() => _trainerId = t.$1),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _trainerId == t.$1
-                              ? Icons.radio_button_checked_rounded
-                              : Icons.radio_button_off_rounded,
-                          color: _trainerId == t.$1
-                              ? Theme.of(context).colorScheme.primary
-                              : AppColors.subtle,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text(t.$2,
-                            style: const TextStyle(fontSize: 15, color: AppColors.ink)),
-                      ],
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Tell us about you',
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'A couple of basics so your trainer can greet you by name.',
+                      style: TextStyle(fontSize: 14, color: AppColors.subtle),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    TextField(
+                      controller: _name,
+                      decoration: const InputDecoration(
+                        labelText: 'Your name',
+                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    TextField(
+                      controller: _email,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.mail_outline_rounded),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const Text(
+                      'PICK YOUR TRAINER',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.subtle,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    ..._trainerOptions.map(
+                      (t) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: _TrainerCard(
+                          name: t.$2,
+                          subtitle: t.$3,
+                          selected: _trainerId == t.$1,
+                          onTap: () => setState(() => _trainerId = t.$1),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: AppColors.divider)),
+              ),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+              child: PrimaryButton(
+                label: 'Continue',
+                icon: Icons.arrow_forward_rounded,
+                loading: _busy,
+                onPressed: _submit,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrainerCard extends StatelessWidget {
+  const _TrainerCard({
+    required this.name,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String name;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            border: Border.all(
+              color: selected ? primary : AppColors.divider,
+              width: selected ? 1.6 : 1.0,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: primary.withValues(alpha: 0.15),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.trainerPrimary,
+                      AppColors.trainerPrimary.withValues(alpha: 0.78),
+                    ],
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  name.characters.first.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
                   ),
                 ),
               ),
-              const Spacer(),
-              PrimaryButton(label: 'Continue', loading: _busy, onPressed: _submit),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(fontSize: 12, color: AppColors.subtle),
+                    ),
+                  ],
+                ),
+              ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: selected ? primary : Colors.white,
+                  border: Border.all(
+                    color: selected ? primary : AppColors.divider,
+                    width: 2,
+                  ),
+                ),
+                child: selected
+                    ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
+                    : null,
+              ),
             ],
           ),
         ),
